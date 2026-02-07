@@ -9,6 +9,7 @@ public class UnitRegistry : MonoBehaviour
         faction = GetComponent<FactionMember>();
     }
 
+
     void Start()
     {
         FactionManager.Instance.RegisterUnit(faction.factionId, gameObject);
