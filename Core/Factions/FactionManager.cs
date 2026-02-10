@@ -7,6 +7,7 @@ public class FactionManager : MonoBehaviour
 
     Dictionary<int, FactionResources> resources = new();
     Dictionary<int, HashSet<GameObject>> units = new();
+    Dictionary<string, FactionResources> resourcesByFaction;
 
     void Awake()
     {
@@ -19,9 +20,9 @@ public class FactionManager : MonoBehaviour
         units[id] = new HashSet<GameObject>();
     }
 
-    public FactionResources GetResources(int id)
+    public FactionResources GetResources(string factionId)
     {
-        return resources[id];
+        return resourcesByFaction[factionId];
     }
 
     public void RegisterUnit(int factionId, GameObject unit)

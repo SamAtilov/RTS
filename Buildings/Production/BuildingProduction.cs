@@ -1,29 +1,40 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class BuildingProduction : MonoBehaviour
 {
+    [Header("Spawn")]
     public Transform spawnPoint;
+
+    [Header("Units")]
     public List<GameObject> unitPrefabs;
 
-    FactionMember faction;
+    FactionMember factionMember;
     FactionResources resources;
+
+    public Queue<UnitBlueprint> queue = new();
+    public event Action OnQueueChanged;
 
     void Awake()
     {
-        faction = GetComponent<FactionMember>();
+        factionMember = GetComponent<FactionMember>();
     }
 
     void Start()
     {
-        resources = FactionManager.Instance.GetResources(faction.factionId);
+        resources = FactionManager.Instance
+            .GetResources(factionMember.FactionId);
     }
 
     public void Produce(int index, int cost)
     {
-        if (resources.energy < cost) return;
+        if (index < 0 || index >= unitPrefabs.Count)
+            return;
+
+        if (resources.energy < cost)
+            return;
 
         resources.energy -= cost;
 
@@ -33,17 +44,29 @@ public class BuildingProduction : MonoBehaviour
             spawnPoint.rotation
         );
 
-        unit.GetComponent<FactionMember>().factionId = faction.factionId;
+        // ✅ КЛЮЧЕВОЕ МЕСТО
+        unit.GetComponent<FactionMember>()
+            .SetFaction(factionMember.Faction);
     }
-
-    public Queue<UnitBlueprint> queue = new();
-    public event Action OnQueueChanged;
 
     IEnumerator BuildRoutine(UnitBlueprint blueprint)
     {
         float t = blueprint.buildTime;
-        while (t > 0f) { t -= Time.deltaTime; yield return null; }
-        Instantiate(blueprint.prefab, spawnPoint.position, spawnPoint.rotation);
+        while (t > 0f)
+        {
+            t -= Time.deltaTime;
+            yield return null;
+        }
+
+        GameObject unit = Instantiate(
+            blueprint.prefab,
+            spawnPoint.position,
+            spawnPoint.rotation
+        );
+
+        unit.GetComponent<FactionMember>()
+            .SetFaction(factionMember.Faction);
+
         OnQueueChanged?.Invoke();
         StartNextIfAny();
     }

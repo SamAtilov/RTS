@@ -20,7 +20,7 @@ public class UnitAttack : MonoBehaviour
         if (h == null) return;
 
         var otherFaction = h.GetComponent<FactionMember>();
-        if (otherFaction != null && otherFaction.factionId == faction.factionId)
+        if (otherFaction != null && otherFaction.FactionId == faction.FactionId)
             return;
 
         target = h;

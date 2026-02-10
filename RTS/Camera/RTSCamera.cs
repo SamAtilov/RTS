@@ -3,56 +3,61 @@
 public class RTSCamera : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed = 20f;
+    public float moveSpeed = 30f;
     public float edgeSize = 10f;
 
-    [Header("Zoom")]
-    public float zoomSpeed = 200f;
-    public float minY = 10f;
-    public float maxY = 40f;
+    [Header("Limits")]
+    public Vector2 xLimits = new(-100, 100);
+    public Vector2 zLimits = new(-100, 100);
 
-    [Header("Map Bounds")]
-    public float minX = 15f;
-    public float maxX = 285f;
-    public float minZ = 15f;
-    public float maxZ = 285f;
+    Camera cam;
+
+    void Awake()
+    {
+        cam = Camera.main;
+    }
 
     void Update()
     {
-        Vector3 move = Vector3.zero;
+        // ❌ Камера НЕ двигается во время drag-выделения
+        if (SelectionManager.Instance != null &&
+            SelectionManager.Instance.IsSelecting)
+            return;
 
-        // направления камеры, проецированные на землю
-        Vector3 forward = transform.forward;
-        Vector3 right = transform.right;
+        Vector3 dir = Vector3.zero;
 
-        forward.y = 0f;
-        right.y = 0f;
+        Vector3 forward = cam.transform.forward;
+        Vector3 right = cam.transform.right;
+
+        forward.y = 0;
+        right.y = 0;
 
         forward.Normalize();
         right.Normalize();
 
-        // Движение по краям экрана
-        if (Input.mousePosition.y > Screen.height - edgeSize)
-            move += forward;
-        if (Input.mousePosition.y < edgeSize)
-            move -= forward;
-        if (Input.mousePosition.x > Screen.width - edgeSize)
-            move += right;
-        if (Input.mousePosition.x < edgeSize)
-            move -= right;
+        // ⌨ Стрелки
+        if (Input.GetKey(KeyCode.UpArrow)) dir += forward;
+        if (Input.GetKey(KeyCode.DownArrow)) dir -= forward;
+        if (Input.GetKey(KeyCode.LeftArrow)) dir -= right;
+        if (Input.GetKey(KeyCode.RightArrow)) dir += right;
 
-        Vector3 pos = transform.position;
-        pos += move * moveSpeed * Time.deltaTime;
+        // 🖱 Edge scroll
+        Vector3 mouse = Input.mousePosition;
 
-        // Зум
-        float scroll = Input.GetAxis("Mouse ScrollWheel");
-        pos.y -= scroll * zoomSpeed * Time.deltaTime;
-        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        if (mouse.x <= edgeSize) dir -= right;
+        else if (mouse.x >= Screen.width - edgeSize) dir += right;
 
-        // Ограничение по карте
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        pos.z = Mathf.Clamp(pos.z, minZ, maxZ);
+        if (mouse.y <= edgeSize) dir -= forward;
+        else if (mouse.y >= Screen.height - edgeSize) dir += forward;
 
-        transform.position = pos;
+        if (dir.sqrMagnitude > 1f)
+            dir.Normalize();
+
+        Vector3 newPos = transform.position + dir * moveSpeed * Time.deltaTime;
+
+        newPos.x = Mathf.Clamp(newPos.x, xLimits.x, xLimits.y);
+        newPos.z = Mathf.Clamp(newPos.z, zLimits.x, zLimits.y);
+
+        transform.position = newPos;
     }
 }
